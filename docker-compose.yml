@@ -1,0 +1,12 @@
+version: "3.7"
+services:
+  event-app:
+    container_name: event-app
+    build: ./app
+    ports:
+      - "3004:3000"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
