@@ -4,7 +4,7 @@ import eventProcessPlugin from './eventProcess.js';
 import locateMapPlugin from './locateMap.js';
 import S3Plugin from './S3.js';
 
-export function createServer() {
+export default function createServer() {
   const app = fastify({
     logger: true,
   });

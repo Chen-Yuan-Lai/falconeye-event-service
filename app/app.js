@@ -1,6 +1,6 @@
 import 'dotenv/config.js';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
-import { createServer } from './utils/sever.js';
+import createServer from './utils/sever.js';
 import { disconnectConsumer, connectConsumer } from './utils/kafka.js';
 import { createEvent, getNewestSourceMap, createCodeBlocks, createRequestInfo } from './utils/event.js';
 
@@ -18,12 +18,11 @@ async function gracefulShutdown(app) {
 async function main() {
   const app = await createServer();
   const emitter = await connectConsumer('eventData');
-  console.log(process.env.KAFKA_BROKER);
+
   emitter.on('eventData', async data => {
     const client = await app.pg.connect();
-    client.query('COMMIT');
+    await client.query('BEGIN');
     try {
-      await client.query('BEGIN');
       // 1. process & create event
       const { userId, projectId, errorData } = data;
       const { systemInfo, requestInfo, stack, workspacePath, ...otherData } = errorData;
@@ -34,12 +33,12 @@ async function main() {
 
       const { id: eventId } = await createEvent(client, eventData);
 
-      //2. create code block
+      // 2. create code block
       const newestMap = await getNewestSourceMap(client, projectId);
 
       let codeBlocksRes = {};
       // if source map existed, produce code block
-      console.log(newestMap);
+
       if (newestMap) {
         const Key = newestMap.file_name;
         const Bucket = process.env.S3_BUCKET_NAME;
@@ -79,15 +78,13 @@ async function main() {
         requestInfoRes = await createRequestInfo(client, eventId, requestInfo);
       }
 
-      console.log(codeBlocksRes);
-
-      const InsertRes = {
+      const insertRes = {
         eventId,
         codeBlockIds: Object.keys(codeBlocksRes) === 0 ? codeBlocksRes.map(el => el.id) : null,
         requestInfoRes,
       };
 
-      console.log(InsertRes);
+      console.log(insertRes);
       client.query('COMMIT');
     } catch (err) {
       console.error(err);
