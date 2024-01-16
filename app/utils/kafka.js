@@ -8,13 +8,11 @@ const kafka = new Kafka({
   clientId: 'eventProcess-service',
   brokers,
   retry: {
-    initialRetryTime: 1000, // Initial delay between retries in milliseconds
-    retries: 30, // Maximum number of retries
-    maxRetryTime: 30000, // Maximum delay between retries in milliseconds
+    initialRetryTime: 500, // Initial delay between retries in milliseconds
+    retries: Infinity, // Set retries to Infinity for indefinite retries
     factor: 2, // Exponential factor by which the retry time will be increased
     multiplier: 1.5, // Multiplier to calculate retry delay
-    maxInFlightRequests: 1, // Maximum number of in-flight requests during retry
-    retryForever: false, // Whether to retry forever
+    maxRetryTime: 60000, // Maximum wait time for a retry in milliseconds
   },
 });
 
